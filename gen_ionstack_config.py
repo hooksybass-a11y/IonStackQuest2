@@ -420,7 +420,7 @@ def generate_config(results: dict, output_path: str = None):
           "noop_llseek_off"]),
         ("# kernel variables",
          ["init_task_off", "init_uts_ns_off", "empty_zero_page_off",
-          "root_task_group_off", "selinux_blob_sizes_off",
+          "root_task_group_off",
           "selinux_enforcing_off", "security_hook_heads_off",
           "kmalloc_caches_off", "anon_pipe_buf_ops_off"]),
         ("# slide (boot_id infoleak) variables",
