@@ -138,11 +138,6 @@ RESOLVE_RULES = [
         "cfi_first": False,
     },
     {
-        "key": "selinux_blob_sizes_off",
-        "symbols": ["selinux_blob_sizes"],
-        "cfi_first": False,
-    },
-    {
         "key": "selinux_enforcing_off",
         "symbols": ["selinux_state"],      # CONFIG key says "enforcing" but symbol is selinux_state
         "cfi_first": False,
@@ -420,7 +415,7 @@ def generate_config(results: dict, output_path: str = None):
           "noop_llseek_off"]),
         ("# kernel variables",
          ["init_task_off", "init_uts_ns_off", "empty_zero_page_off",
-          "root_task_group_off",
+          "root_task_group_off", "selinux_blob_sizes_off",
           "selinux_enforcing_off", "security_hook_heads_off",
           "kmalloc_caches_off", "anon_pipe_buf_ops_off"]),
         ("# slide (boot_id infoleak) variables",
