@@ -1,0 +1,100 @@
+name: Generate IonStack Config
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install vmlinux-to-elf pyelftools
+          sudo apt-get update -qq
+          sudo apt-get install -y p7zip-full xxd unzip wget
+
+      - name: Download Magisk
+        run: |
+          wget -nv -O magisk.apk \
+            https://github.com/topjohnwu/Magisk/releases/latest/download/app-debug.apk
+          unzip -o -j magisk.apk \
+            'lib/x86_64/libmagiskboot.so' -d .
+          chmod +x libmagiskboot.so
+
+      - name: Download Quest 2 firmware
+        run: |
+          wget -nv -O firmware.zip \
+            https://files.cocaine.trade/firmware/meta/Quest%202/q2_52242990035800150.zip
+
+      - name: Extract firmware
+        run: |
+          mkdir rom_out
+          unzip -o firmware.zip -d rom_out
+
+      - name: Extract Quest 2 boot partition
+        run: |
+          ./libmagiskboot.so extract \
+            rom_out/payload.bin \
+            boot \
+            boot.img
+
+          ls -lh boot.img
+
+      - name: Extract kernel
+        run: |
+          mkdir boot_unpack
+          cd boot_unpack
+
+          ../libmagiskboot.so unpack ../boot.img
+
+          ls -lah
+
+          if [ -f kernel ]; then
+            cp kernel ../kernel.Image
+          else
+            echo "ERROR: kernel was not extracted"
+            exit 1
+          fi
+
+          file ../kernel.Image
+
+      - name: Convert kernel to ELF
+        run: |
+          vmlinux-to-elf \
+            --base-address 0xFFFFFFC008000000 \
+            kernel.Image \
+            kernel.elf
+
+          ls -lh kernel.elf
+
+      - name: Generate IonStack config
+        run: |
+          python3 gen_ionstack_config.py \
+            kernel.elf \
+            ionstack.conf
+
+          echo "========== GENERATED CONFIG =========="
+          cat ionstack.conf
+          echo "======================================"
+
+      - name: Upload config
+        uses: actions/upload-artifact@v4
+        with:
+          name: ionstack-config
+          path: ionstack.conf
+
+      - name: Upload kernel ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-elf
+          path: kernel.elf
